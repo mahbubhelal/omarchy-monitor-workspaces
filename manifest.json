@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.risent.monitor-workspaces",
+  "name": "Monitor Workspaces",
+  "version": "1.0.0",
+  "author": "risent",
+  "license": "MIT",
+  "description": "A monitor-aware workspace indicator for the Omarchy bar",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "Monitor Workspaces",
+    "description": "Shows each monitor's active workspace independently",
+    "category": "Compositor",
+    "defaultSection": "left",
+    "allowMultiple": false,
+    "defaults": {
+      "indicatorStyle": "Underline",
+      "baseWorkspaceCount": 5,
+      "maxWorkspaceId": 10
+    },
+    "schema": [
+      {
+        "key": "indicatorStyle",
+        "type": "enum",
+        "label": "Indicator style",
+        "description": "Visual treatment for the workspace displayed on this monitor.",
+        "options": ["Underline", "Typography", "Dot", "Grouped", "Circle"],
+        "defaultValue": "Underline"
+      },
+      {
+        "key": "baseWorkspaceCount",
+        "type": "integer",
+        "label": "Always-visible workspaces",
+        "description": "Always show workspace numbers starting at 1; other active or persistent workspaces are added automatically.",
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "defaultValue": 5
+      },
+      {
+        "key": "maxWorkspaceId",
+        "type": "integer",
+        "label": "Maximum workspace number",
+        "description": "Ignore numbered workspaces above this value.",
+        "min": 1,
+        "max": 99,
+        "step": 1,
+        "defaultValue": 10
+      }
+    ]
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.workspaces"
+  }
+}
