@@ -26,6 +26,18 @@ omarchy plugin add https://github.com/risent/omarchy-monitor-workspaces.git --en
 The plugin declares itself as a replacement for `omarchy.workspaces`. When
 prompted, place it in the left section of the bar.
 
+## Requirements and dependencies
+
+- Omarchy Quattro with the built-in Quickshell bar plugin system.
+- The bundled Quickshell version must expose `QsWindow` and
+  `Hyprland.monitorFor()`.
+- Hyprland numbered workspaces; persistent workspace rules are recommended for
+  retaining monitor ownership while a workspace is empty.
+
+The plugin has no additional package, service, network, credential, installer,
+or elevated-privilege dependency. It only uses APIs and theme components
+provided by Omarchy and Quickshell.
+
 ## Configure
 
 Open the Omarchy bar settings and edit **Monitor Workspaces**, or configure the
@@ -92,9 +104,6 @@ Validate the plugin and lint its QML:
 ```bash
 ./tests/check.sh
 ```
-
-The plugin requires an Omarchy shell release whose bundled Quickshell exposes
-`QsWindow` and `Hyprland.monitorFor()`.
 
 ## License
 
