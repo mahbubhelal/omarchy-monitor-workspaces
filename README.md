@@ -4,7 +4,7 @@ A monitor-aware replacement for Omarchy's workspace bar widget. Each bar
 marks the workspace displayed on its own monitor instead of mirroring the
 globally focused workspace across every display.
 
-![Monitor Workspaces on two displays](screenshots/monitor-workspaces.png)
+![Monitor Workspaces on two displays](preview.png)
 
 ## Features
 
