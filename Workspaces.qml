@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
@@ -23,6 +24,77 @@ BarWidget {
     var window = root.QsWindow.window
     var screen = window ? window.screen : null
     return screen ? Hyprland.monitorFor(screen) : null
+  }
+
+  readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace
+    ? Hyprland.focusedWorkspace.id : 0
+  readonly property string focusedMonitorName: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.monitor
+    ? String(Hyprland.focusedWorkspace.monitor.name || "") : ""
+
+  // Workspace id -> monitor rule ("DP-3" or "desc:..."). Empty workspaces carry
+  // no monitor of their own, so their group comes from the rules.
+  property var workspaceRules: ({})
+
+  Process {
+    id: workspaceRulesProc
+    running: true
+    command: ["hyprctl", "-j", "workspacerules"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.applyWorkspaceRules(text)
+    }
+  }
+
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      var name = event ? String(event.name || "") : ""
+      // Quickshell 0.3.1 can leave monitor.activeWorkspace stale after a
+      // workspace moves between monitors.
+      if (name === "moveworkspacev2") Hyprland.refreshMonitors()
+      // hyprmoncfg rewrites the workspace rules and reloads when the monitors change.
+      if (name === "configreloaded" || name.indexOf("monitoradded") === 0
+          || name.indexOf("monitorremoved") === 0) workspaceRulesProc.running = true
+    }
+  }
+
+  function applyWorkspaceRules(json) {
+    var rules = {}
+    try {
+      var parsed = JSON.parse(json)
+      for (var i = 0; i < parsed.length; i++) {
+        var id = Number(parsed[i].workspaceString)
+        if (id > 0 && parsed[i].monitor) rules[id] = String(parsed[i].monitor)
+      }
+    } catch (error) {
+      console.warn("monitor-workspaces: could not read workspace rules: " + error)
+    }
+    root.workspaceRules = rules
+  }
+
+  // The monitor a workspace belongs to: where it is now, else where its rule pins it.
+  function homeMonitorName(id) {
+    var current = workspaceMonitorName(id)
+    if (current !== "") return current
+    var rule = root.workspaceRules[id]
+    if (!rule) return ""
+    var monitors = Hyprland.monitors.values
+    for (var i = 0; i < monitors.length; i++) {
+      var description = String(monitors[i].description || "")
+      if (rule === monitors[i].name
+          || (rule.indexOf("desc:") === 0 && description.indexOf(rule.slice(5)) === 0))
+        return String(monitors[i].name)
+    }
+    return ""
+  }
+
+  function shownWorkspaceIds() {
+    var ids = []
+    var monitors = Hyprland.monitors.values
+    for (var i = 0; i < monitors.length; i++) {
+      if (monitors[i].activeWorkspace) ids.push(monitors[i].activeWorkspace.id)
+    }
+    return ids
   }
 
   function workspaceById(id) {
@@ -101,6 +173,16 @@ BarWidget {
           && workspace.monitor !== null
           && root.barMonitor !== null
           && workspace.monitor.name === root.barMonitor.name
+        // Some monitor is showing this workspace right now.
+        readonly property bool shown: root.shownWorkspaceIds().indexOf(modelData) !== -1
+        // It belongs to a monitor other than the focused one.
+        readonly property bool faded: root.focusedMonitorName !== ""
+          && root.homeMonitorName(modelData) !== ""
+          && root.homeMonitorName(modelData) !== root.focusedMonitorName
+        readonly property color baseForeground: root.bar ? root.bar.barForeground : Color.foreground
+        // The theme's text colour with some of its red blended in, both from the active theme.
+        readonly property color fadedForeground: Qt.tint(baseForeground,
+          Qt.rgba(activeColor.r, activeColor.g, activeColor.b, 0.6))
 
         bar: root.bar
         text: modelData === 10 ? "0" : String(modelData)
@@ -108,10 +190,10 @@ BarWidget {
           ? Color.background
           : (displayed && root.indicatorStyle === "typography"
             ? Color.accent
-            : (root.bar ? root.bar.barForeground : Color.foreground))
+            : (faded ? fadedForeground : baseForeground))
         fontSize: displayed && root.indicatorStyle === "typography"
           ? Style.font.body + 1 : Style.font.body
-        opacity: displayed || onThisMonitor ? 1 : (occupied ? 0.6 : 0.3)
+        opacity: shown || occupied ? 1 : 0.35
         horizontalMargin: 6
         verticalPadding: 6
         fixedWidth: root.vertical ? root.barSize : Style.space(20)
@@ -138,9 +220,10 @@ BarWidget {
         Rectangle {
           readonly property int inset: Style.space(2)
 
-          visible: workspaceButton.displayed
+          visible: workspaceButton.shown
             && (root.indicatorStyle === "underline" || root.indicatorStyle === "grouped")
-          color: Color.accent
+          color: workspaceButton.modelData === root.focusedWorkspaceId
+            ? Color.accent : workspaceButton.activeColor
           radius: Math.min(width, height) / 2
           width: root.vertical ? Style.space(2) : Style.space(12)
           height: root.vertical ? Style.space(12) : Style.space(2)
