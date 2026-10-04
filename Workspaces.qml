@@ -19,6 +19,22 @@ BarWidget {
     Number(setting("baseWorkspaceCount", 5)) || 5))
   readonly property int maxWorkspaceId: Math.max(baseWorkspaceCount, Math.min(99,
     Number(setting("maxWorkspaceId", 10)) || 10))
+  readonly property int maxNameLength: Math.max(3, Math.min(40,
+    Number(setting("maxNameLength", 12)) || 12))
+  // "1:chrome, 2:code" -> { 1: "chrome", 2: "code" }
+  readonly property var workspaceNames: {
+    var names = {}
+    var entries = String(setting("workspaceNames", "")).split(",")
+    for (var i = 0; i < entries.length; i++) {
+      var separator = entries[i].indexOf(":")
+      if (separator === -1) continue
+      var id = Number(entries[i].slice(0, separator).trim())
+      var name = entries[i].slice(separator + 1).trim()
+      if (name.length > maxNameLength) name = name.slice(0, maxNameLength - 1) + "…"
+      if (id > 0 && name !== "") names[id] = name
+    }
+    return names
+  }
 
   readonly property var barMonitor: {
     var window = root.QsWindow.window
@@ -184,8 +200,12 @@ BarWidget {
         readonly property color fadedForeground: Qt.tint(baseForeground,
           Qt.rgba(activeColor.r, activeColor.g, activeColor.b, 0.6))
 
+        readonly property string number: modelData === 10 ? "0" : String(modelData)
+        // Names don't fit across a vertical bar, so it keeps the bare number.
+        readonly property string workspaceName: root.vertical ? "" : (root.workspaceNames[modelData] || "")
+
         bar: root.bar
-        text: modelData === 10 ? "0" : String(modelData)
+        text: workspaceName !== "" ? number + ": " + workspaceName : number
         foreground: displayed && root.indicatorStyle === "circle"
           ? Color.background
           : (displayed && root.indicatorStyle === "typography"
@@ -196,7 +216,7 @@ BarWidget {
         opacity: shown || occupied ? 1 : 0.35
         horizontalMargin: 6
         verticalPadding: 6
-        fixedWidth: root.vertical ? root.barSize : Style.space(20)
+        fixedWidth: root.vertical ? root.barSize : (workspaceName !== "" ? -1 : Style.space(20))
         fixedHeight: root.barSize
         tooltipText: workspace && workspace.monitor
           ? "Workspace " + modelData + " · " + workspace.monitor.name

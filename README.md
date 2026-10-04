@@ -48,7 +48,9 @@ widget inline in `~/.config/omarchy/shell.json`:
   "id": "io.github.risent.monitor-workspaces",
   "indicatorStyle": "Underline",
   "baseWorkspaceCount": 5,
-  "maxWorkspaceId": 10
+  "maxWorkspaceId": 10,
+  "workspaceNames": "1:chrome, 2:code",
+  "maxNameLength": 12
 }
 ```
 
@@ -68,6 +70,11 @@ workspaces assigned elsewhere are dimmed.
 `baseWorkspaceCount` controls how many workspace numbers are always visible
 starting at 1. Active or persistent workspaces above that range appear
 automatically up to `maxWorkspaceId`.
+
+`workspaceNames` labels workspaces with comma-separated `number:name` pairs,
+so `1:chrome` shows workspace 1 as `1: chrome`. Workspaces without a name keep
+the bare number, and vertical bars always show only the number. Names longer
+than `maxNameLength` characters are shortened with an ellipsis.
 
 For empty workspaces to retain a monitor assignment, configure them as
 persistent Hyprland workspaces. For example:

@@ -21,7 +21,9 @@
     "defaults": {
       "indicatorStyle": "Underline",
       "baseWorkspaceCount": 5,
-      "maxWorkspaceId": 10
+      "maxWorkspaceId": 10,
+      "workspaceNames": "",
+      "maxNameLength": 12
     },
     "schema": [
       {
@@ -51,6 +53,23 @@
         "max": 99,
         "step": 1,
         "defaultValue": 10
+      },
+      {
+        "key": "workspaceNames",
+        "type": "string",
+        "label": "Workspace names",
+        "description": "Comma-separated number:name pairs, e.g. 1:chrome, 2:code. Named workspaces show as \"1: chrome\" on horizontal bars.",
+        "defaultValue": ""
+      },
+      {
+        "key": "maxNameLength",
+        "type": "integer",
+        "label": "Maximum name length",
+        "description": "Longer workspace names are shortened with an ellipsis.",
+        "min": 3,
+        "max": 40,
+        "step": 1,
+        "defaultValue": 12
       }
     ]
   },
